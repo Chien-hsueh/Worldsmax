@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worlds 2026 Swiss Stage Simulator</title>
+    <style>
+        :root {
+            --bg-color: #060913;
+            --card-bg: rgba(15, 23, 42, 0.85);
+            --card-border: rgba(56, 189, 248, 0.25);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-cyan: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --win-color: #10b981;
+            --win-bg: rgba(16, 185, 129, 0.18);
+            --win-border: rgba(16, 185, 129, 0.5);
+            --loss-color: #f43f5e;
+            --loss-bg: rgba(244, 63, 94, 0.18);
+            --loss-border: rgba(244, 63, 94, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 50% -10%, rgba(56, 189, 248, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Nav Header */
+        nav {
+            width: 100%;
+            padding: 18px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            background: rgba(6, 9, 19, 0.8);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav .logo-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+            letter-spacing: -0.01em;
+            cursor: pointer;
+        }
+
+        .btn-nav-action {
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, #a855f7 100%);
+            color: #060913;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-nav-action:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);
+        }
+
+        /* Section View Visibility Controls */
+        #landing-view {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+            padding: 40px 24px 80px 24px;
+        }
+
+        #simulator-view {
+            display: none;
+            width: 100%;
+            padding: 24px;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            margin: 40px 0 40px 0;
+            max-width: 800px;
+        }
+
+        .hero h1 {
+            font-size: 2.8rem;
+            font-weight: 900;
+            line-height: 1.15;
+            background: linear-gradient(135deg, #ffffff 20%, var(--accent-cyan) 80%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+            letter-spacing: -0.03em;
+        }
+
+        .hero p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .btn-cta-primary {
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, #a855f7 100%);
+            color: #060913;
+            border: none;
+            padding: 16px 36px;
+            border-radius: 12px;
+            font-weight: 900;
+            font-size: 1.15rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 24px rgba(168, 85, 247, 0.4);
+        }
+
+        .btn-cta-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 32px rgba(168, 85, 247, 0.6);
+        }
+
+        /* Round 1 Matchups Visualization Section */
+        .r1-section {
+            width: 100%;
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .r1-section-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .r1-section-subtitle {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .r1-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 12px;
+            width: 100%;
+        }
+
+        .r1-match-card {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(8px);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .r1-match-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-cyan);
+        }
+
+        .r1-team {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .r1-team-code {
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .r1-vs {
+            font-size: 0.7rem;
+            font-weight: 900;
+            color: var(--accent-cyan);
+            padding: 0 4px;
+        }
+
+        /* Landing Explanation Stack (Clean Vertical List, Not Cards) */
+        .explanation-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 36px;
+            width: 100%;
+            margin-top: 48px;
+            text-align: left;
+            border-top: 1px solid var(--card-border);
+            padding-top: 40px;
+        }
+
+        .explanation-item h3 {
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .explanation-item p {
+            color: var(--text-muted);
+            font-size: 0.98rem;
+            line-height: 1.65;
+        }
+
+        /* Simulator UI */
+        .container {
+            width: 95vw;
+            max-width: 860px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .container.has-results {
+            max-width: 1650px;
+        }
+
+        @media (min-width: 1200px) {
+            .container.has-results {
+                display: grid;
+                grid-template-columns: 500px 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 22px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        #results-card {
+            display: none;
+        }
+
+        .card-header {
+            font-size: 1.25rem;
+            font-weight: 800;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+
+        .team-tabs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .team-tab {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-muted);
+            padding: 8px 6px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .team-tab:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            color: var(--text-main);
+            transform: translateY(-2px);
+        }
+
+        .team-tab.active {
+            background: rgba(30, 41, 59, 0.95);
+            color: var(--accent-cyan);
+            border: 1.5px solid var(--accent-cyan);
+            box-shadow: 0 0 14px rgba(56, 189, 248, 0.3);
+        }
+
+        .team-logo-img {
+            width: 26px;
+            height: 26px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+        }
+
+        .summary-banner {
+            background: rgba(6, 9, 19, 0.8);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .matchup-list {
+            max-height: 52vh;
+            min-height: 350px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-right: 4px;
+            margin-bottom: 20px;
+        }
+
+        .matchup-row {
+            background: rgba(6, 9, 19, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .team-card-btn {
+            flex: 1;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.15s ease;
+        }
+
+        .team-card-btn:hover {
+            border-color: var(--text-muted);
+            color: var(--text-main);
+        }
+
+        .team-card-btn.win {
+            background: var(--win-bg);
+            border-color: var(--win-border);
+            color: var(--win-color);
+            box-shadow: 0 0 14px rgba(16, 185, 129, 0.25);
+        }
+
+        .team-card-btn.loss {
+            background: var(--loss-bg);
+            border-color: var(--loss-border);
+            color: var(--loss-color);
+            box-shadow: 0 0 14px rgba(244, 63, 94, 0.25);
+        }
+
+        .vs-badge {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 900;
+        }
+
+        .controls-section {
+            border-top: 1px solid var(--card-border);
+            padding-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .slider-group label {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            accent-color: var(--accent-cyan);
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .btn-run {
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, #a855f7 100%);
+            color: #060913;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 900;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 20px rgba(168, 85, 247, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-run:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(168, 85, 247, 0.5);
+        }
+
+        .btn-reset {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--card-border);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            cursor: pointer;
+        }
+
+        .btn-reset:hover {
+            color: var(--text-main);
+            border-color: var(--text-muted);
+        }
+
+        .results-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .team-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+        }
+
+        .progress-bar-bg {
+            background: rgba(6, 9, 19, 0.8);
+            border-radius: 4px;
+            height: 8px;
+            width: 90px;
+            display: inline-block;
+            overflow: hidden;
+            margin-right: 8px;
+            vertical-align: middle;
+            border: 1px solid var(--card-border);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--win-color), var(--accent-cyan));
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+
+        .status-loading {
+            text-align: center;
+            padding: 50px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+
+        /* ---------------------------------------------------------------
+           Worlds Swiss Simulator — product design pass
+           A restrained tournament-analytics system: quiet surfaces,
+           clear hierarchy, warm Worlds-inspired accent, minimal glow.
+           --------------------------------------------------------------- */
+        :root {
+            color-scheme: dark;
+            --bg-color: #0b0e12;
+            --card-bg: #12171d;
+            --card-border: #2a323b;
+            --text-main: #f2f4f6;
+            --text-muted: #9aa5b1;
+            --accent-cyan: #d6b56d;
+            --accent-hover: #e5c986;
+            --win-color: #77c7a0;
+            --win-bg: rgba(67, 145, 108, 0.13);
+            --win-border: rgba(104, 190, 145, 0.42);
+            --loss-color: #e28b8b;
+            --loss-bg: rgba(166, 73, 73, 0.13);
+            --loss-border: rgba(210, 111, 111, 0.4);
+            --surface-1: #151b22;
+            --surface-2: #0e1217;
+            --surface-hover: #1b232c;
+            --focus-ring: rgba(214, 181, 109, 0.34);
+        }
+
+        *, *::before, *::after {
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+                         "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        html { background: var(--bg-color); }
+
+        body {
+            background: var(--bg-color);
+            background-image:
+                linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+            background-size: 36px 36px;
+            color: var(--text-main);
+            align-items: stretch;
+            letter-spacing: -0.01em;
+        }
+
+        button, input { font: inherit; }
+        button { -webkit-tap-highlight-color: transparent; }
+        button:focus-visible, input:focus-visible, .logo-title:focus-visible {
+            outline: 2px solid var(--accent-cyan);
+            outline-offset: 3px;
+        }
+
+        nav {
+            position: sticky;
+            padding: 15px clamp(18px, 4vw, 56px);
+            min-height: 66px;
+            background: rgba(11, 14, 18, 0.96);
+            border-bottom: 1px solid #252c34;
+            backdrop-filter: blur(14px);
+        }
+
+        nav .logo-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 11px;
+            color: #f3f0e8;
+            font-size: 0.87rem;
+            font-weight: 760;
+            letter-spacing: 0.075em;
+            text-transform: uppercase;
+        }
+
+        nav .logo-title::before {
+            content: "";
+            display: block;
+            width: 11px;
+            height: 11px;
+            background: var(--accent-cyan);
+            transform: rotate(45deg);
+            border-radius: 2px;
+            box-shadow: 0 0 0 4px rgba(214,181,109,0.09);
+        }
+
+        .btn-nav-action {
+            color: #f2e5c7;
+            background: #1a2027;
+            border: 1px solid #45413a;
+            border-radius: 7px;
+            padding: 9px 15px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.015em;
+            transition: background .18s ease, border-color .18s ease;
+        }
+        .btn-nav-action:hover {
+            transform: none;
+            background: #242a31;
+            border-color: #8d774a;
+            box-shadow: none;
+        }
+
+        #landing-view {
+            max-width: 1160px;
+            align-self: center;
+            padding: clamp(32px, 5vw, 64px) clamp(18px, 3vw, 30px) 76px;
+        }
+
+        .hero {
+            max-width: 850px;
+            margin: 16px 0 52px;
+        }
+        .hero::before {
+            content: "WORLDS 2026  /  SWISS STAGE ANALYTICS";
+            display: block;
+            margin-bottom: 18px;
+            color: var(--accent-cyan);
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.17em;
+        }
+        .hero h1 {
+            max-width: 850px;
+            margin: 0 auto 19px;
+            color: #f3f4f5;
+            background: none;
+            -webkit-background-clip: initial;
+            -webkit-text-fill-color: currentColor;
+            font-size: clamp(2.35rem, 5vw, 4.15rem);
+            font-weight: 760;
+            line-height: 1.04;
+            letter-spacing: -0.055em;
+        }
+        .hero p {
+            max-width: 690px;
+            margin: 0 auto 28px;
+            color: #a5afb9;
+            font-size: clamp(0.98rem, 1.4vw, 1.08rem);
+            line-height: 1.75;
+        }
+
+        .btn-cta-primary, .btn-run {
+            border: 1px solid #e4c984;
+            background: #d6b56d;
+            color: #17140d;
+            border-radius: 8px;
+            box-shadow: none;
+            font-weight: 780;
+            letter-spacing: 0.005em;
+            transition: background .18s ease, transform .18s ease;
+        }
+        .btn-cta-primary {
+            padding: 14px 25px;
+            font-size: 0.98rem;
+        }
+        .btn-cta-primary:hover, .btn-run:hover {
+            background: #e5c986;
+            transform: translateY(-1px);
+            box-shadow: none;
+        }
+
+        .hero-how-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 17px;
+            color: #aeb7c0;
+            font-size: 0.82rem;
+            font-weight: 650;
+            text-decoration: none;
+            transition: color .16s ease;
+        }
+        .hero-how-link:hover {
+            color: #e4c984;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+        }
+        .hero-how-link:focus-visible {
+            outline: 2px solid #d6b56d;
+            outline-offset: 4px;
+            border-radius: 2px;
+        }
+        .explanation-stack { scroll-margin-top: 88px; }
+
+        .r1-section {
+            margin-top: 0;
+            padding: 25px;
+            text-align: left;
+            background: rgba(18, 23, 29, 0.94);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+        }
+        .r1-section-title {
+            margin-bottom: 7px;
+            color: #edf0f3;
+            font-size: 0.96rem;
+            font-weight: 760;
+            letter-spacing: 0.07em;
+        }
+        .r1-section-subtitle {
+            margin-bottom: 20px;
+            color: var(--text-muted);
+            font-size: 0.84rem;
+            line-height: 1.5;
+        }
+        .r1-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 9px;
+        }
+        .r1-match-card {
+            min-height: 80px;
+            padding: 12px 10px;
+            background: #0e1217;
+            border: 1px solid #29313a;
+            border-radius: 8px;
+            backdrop-filter: none;
+            transition: border-color .16s ease, background .16s ease;
+        }
+        .r1-match-card:hover {
+            transform: none;
+            background: #151b22;
+            border-color: #665b43;
+        }
+        .r1-team { gap: 7px; min-width: 0; }
+        .r1-team-code { font-size: 0.77rem; letter-spacing: 0.025em; }
+        .r1-vs {
+            color: #77818c;
+            font-size: 0.62rem;
+            letter-spacing: 0.08em;
+            padding: 0 7px;
+        }
+        .team-logo-img {
+            width: 25px;
+            height: 25px;
+            filter: none;
+        }
+
+        /* Explanations use an editorial row layout, so the longer simulation
+           explanation gets the width it needs instead of creating an uneven card. */
+        .explanation-stack {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0;
+            width: 100%;
+            margin-top: 30px;
+            padding-top: 8px;
+            border-top: 1px solid #252c34;
+        }
+        .explanation-item {
+            display: grid;
+            grid-template-columns: minmax(200px, 0.8fr) minmax(0, 1.8fr);
+            align-items: start;
+            gap: 30px;
+            padding: 23px 4px;
+            border-bottom: 1px solid #252c34;
+        }
+        .explanation-item h3 {
+            display: flex;
+            align-items: flex-start;
+            gap: 13px;
+            color: #e4c984;
+            font-size: 0.98rem;
+            font-weight: 750;
+            line-height: 1.5;
+            margin: 0;
+        }
+        .step-number {
+            display: inline-flex;
+            flex: 0 0 30px;
+            width: 30px;
+            height: 30px;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #62563c;
+            border-radius: 7px;
+            background: #211f1a;
+            color: #e4c984;
+            font-size: 0.73rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            font-variant-numeric: tabular-nums;
+        }
+        .explanation-copy {
+            max-width: 690px;
+        }
+        .explanation-copy p {
+            color: #9ba5b0;
+            font-size: 0.88rem;
+            line-height: 1.75;
+            margin: 0;
+        }
+        .explanation-copy p + p { margin-top: 9px; }
+
+        #simulator-view {
+            align-items: stretch;
+            padding: clamp(16px, 2.4vw, 32px);
+        }
+        .container {
+            width: 100%;
+            max-width: 940px;
+            gap: 18px;
+        }
+        .container.has-results {
+            max-width: 1680px;
+        }
+        /* Keep the selector compact once the results panel shares the desktop row. */
+        .container.has-results .team-tabs-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        @media (min-width: 1200px) {
+            .container.has-results {
+                grid-template-columns: minmax(370px, 430px) minmax(0, 1fr);
+                align-items: start;
+                gap: 18px;
+            }
+            .container.has-results > .card:first-child {
+                position: sticky;
+                top: 84px;
+            }
+        }
+
+        .card {
+            min-width: 0;
+            background: rgba(18, 23, 29, 0.97);
+            border: 1px solid #2a323b;
+            border-radius: 11px;
+            padding: clamp(16px, 1.8vw, 22px);
+            box-shadow: 0 10px 28px rgba(0,0,0,0.17);
+            backdrop-filter: none;
+        }
+        .card-header {
+            margin-bottom: 17px;
+            padding-bottom: 14px;
+            color: #f0f2f4;
+            border-bottom: 1px solid #2a323b;
+            font-size: 1.04rem;
+            font-weight: 760;
+            letter-spacing: -0.025em;
+        }
+        .btn-reset {
+            border: 1px solid #343d47;
+            border-radius: 6px;
+            padding: 7px 10px;
+            color: #aab3bd;
+            font-size: 0.73rem;
+            font-weight: 650;
+            transition: color .16s ease, border-color .16s ease, background .16s ease;
+        }
+        .btn-reset:hover {
+            color: #f1f2f3;
+            border-color: #665b43;
+            background: #1a2027;
+        }
+
+        .team-tabs-grid {
+            grid-template-columns: repeat(8, minmax(0, 1fr));
+            gap: 7px;
+            margin-bottom: 14px;
+        }
+        .team-tab {
+            min-height: 62px;
+            padding: 9px 5px;
+            gap: 5px;
+            background: #0e1217;
+            border: 1px solid #2a323b;
+            border-radius: 7px;
+            color: #a6b0ba;
+            font-size: 0.74rem;
+            font-weight: 760;
+            transition: color .15s ease, border-color .15s ease, background .15s ease;
+        }
+        .team-tab:hover {
+            transform: none;
+            color: #eff2f4;
+            background: #171e25;
+            border-color: #515b64;
+        }
+        .team-tab.active {
+            color: #f0d79e;
+            background: rgba(214,181,109,0.09);
+            border: 1px solid #a68b50;
+            box-shadow: inset 0 0 0 1px rgba(214,181,109,0.05);
+        }
+        .team-tab .team-logo-img { width: 23px; height: 23px; }
+
+        .summary-banner {
+            gap: 12px;
+            padding: 12px 13px;
+            margin-bottom: 13px;
+            background: #0e1217;
+            border: 1px solid #2a323b;
+            border-radius: 7px;
+            color: #9ca6b0;
+            font-size: 0.8rem;
+        }
+        .summary-banner strong {
+            color: #e8d5a7;
+            font-weight: 750;
+            white-space: nowrap;
+        }
+        .matchup-list {
+            max-height: 54vh;
+            min-height: 300px;
+            padding: 0 3px 0 0;
+            margin-bottom: 17px;
+            gap: 7px;
+            scrollbar-color: #3e4852 #12171d;
+            scrollbar-width: thin;
+        }
+        .matchup-row {
+            gap: 9px;
+            padding: 8px 9px;
+            background: #0e1217;
+            border: 1px solid #262e37;
+            border-radius: 8px;
+        }
+        .team-card-btn {
+            min-width: 0;
+            min-height: 48px;
+            padding: 10px 11px;
+            gap: 9px;
+            background: #151b22;
+            border: 1px solid #2b343e;
+            border-radius: 6px;
+            color: #c2c9d0;
+            font-size: 0.88rem;
+            font-weight: 730;
+            transition: border-color .14s ease, background .14s ease, color .14s ease;
+        }
+        .team-card-btn:hover {
+            color: #f2f4f6;
+            background: #1b232c;
+            border-color: #56616b;
+        }
+        .team-card-btn .team-logo-img { flex-shrink: 0; width: 27px; height: 27px; }
+        .team-card-btn.win {
+            color: var(--win-color);
+            background: var(--win-bg);
+            border-color: var(--win-border);
+            box-shadow: inset 3px 0 0 rgba(104,190,145,0.7);
+        }
+        .team-card-btn.loss {
+            color: var(--loss-color);
+            background: var(--loss-bg);
+            border-color: var(--loss-border);
+            box-shadow: inset 3px 0 0 rgba(210,111,111,0.62);
+        }
+        .vs-badge {
+            flex-shrink: 0;
+            color: #717c87;
+            font-size: 0.62rem;
+            letter-spacing: 0.06em;
+        }
+
+        .controls-section {
+            gap: 15px;
+            padding-top: 17px;
+            border-top: 1px solid #2a323b;
+        }
+        .slider-group { gap: 10px; }
+        .slider-group label {
+            color: #a8b1bb;
+            font-size: 0.78rem;
+            font-weight: 650;
+        }
+        .slider-group label strong {
+            color: #ecd8a8;
+            font-size: 0.83rem;
+            font-variant-numeric: tabular-nums;
+        }
+        input[type="range"] { accent-color: var(--accent-cyan); }
+        .btn-run {
+            min-height: 47px;
+            padding: 13px 16px;
+            border-radius: 7px;
+            font-size: 0.92rem;
+            font-weight: 790;
+            letter-spacing: 0.01em;
+        }
+
+        #results-card { display: none; }
+        .model-note {
+            margin: -3px 0 16px;
+            color: #9ba6b1;
+            font-size: 0.78rem;
+            line-height: 1.6;
+            max-width: 78ch;
+        }
+        .model-note strong { color: #e2d0a6; font-weight: 750; }
+        #results-wrapper { min-width: 0; }
+        .results-wrapper {
+            overflow-x: auto;
+            border: 1px solid #28313a;
+            border-radius: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: #3e4852 #12171d;
+        }
+        table {
+            min-width: 650px;
+            font-size: 0.84rem;
+            font-variant-numeric: tabular-nums;
+        }
+        th, td {
+            padding: 15px 16px;
+            border-bottom: 1px solid #252d36;
+            white-space: nowrap;
+        }
+        th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            color: #8e99a5;
+            background: #171d24;
+            font-size: 0.68rem;
+            font-weight: 780;
+            letter-spacing: 0.075em;
+        }
+        tbody tr:last-child td { border-bottom: 0; }
+        tr:hover { background: rgba(255,255,255,0.025); }
+        .team-cell { gap: 9px; color: #e5e9ed; }
+        .team-cell .team-logo-img { width: 23px; height: 23px; }
+        .progress-bar-bg {
+            width: 78px;
+            height: 6px;
+            margin-right: 7px;
+            background: #272f37;
+            border: 0;
+            border-radius: 99px;
+        }
+        .progress-bar-fill {
+            background: #88c9a6;
+            box-shadow: none;
+            border-radius: 99px;
+        }
+        .status-loading {
+            padding: 48px 20px;
+            color: #a0aab4;
+            font-size: 0.9rem;
+            font-style: normal;
+        }
+
+        @media (max-width: 760px) {
+            #landing-view { padding-top: 34px; }
+            .hero { margin: 10px 0 34px; }
+            .r1-section { padding: 17px; }
+            .r1-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .explanation-stack { grid-template-columns: minmax(0, 1fr); gap: 0; }
+            .explanation-item { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 18px 0; }
+            .explanation-copy { max-width: none; padding-left: 43px; }
+            #simulator-view { padding: 14px; }
+            .container.has-results { display: flex; }
+            .card { padding: 15px; }
+            .team-tabs-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+            .matchup-list { max-height: 48vh; min-height: 240px; }
+            .team-card-btn { min-height: 46px; padding: 8px 7px; gap: 6px; font-size: 0.79rem; }
+            .team-card-btn .team-logo-wrap { flex-basis: 23px; width: 23px; height: 23px; }
+        }
+        @media (max-width: 390px) {
+            nav { padding-inline: 14px; }
+            nav .logo-title { font-size: 0.72rem; letter-spacing: 0.045em; }
+            .hero h1 { font-size: 2.15rem; }
+            .team-tabs-grid { gap: 5px; }
+            .team-tab { font-size: 0.69rem; }
+            .summary-banner { align-items: flex-start; flex-direction: column; gap: 5px; }
+            .matchup-row { gap: 5px; padding: 5px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+        }
+
+
+
+        /* Logo fallbacks keep team identifiers legible when third-party assets fail. */
+        .team-logo-wrap {
+            display: inline-flex;
+            position: relative;
+            flex: 0 0 26px;
+            width: 26px;
+            height: 26px;
+            align-items: center;
+            justify-content: center;
+            vertical-align: middle;
+        }
+        .team-logo-wrap .team-logo-img { display: block; width: 100%; height: 100%; object-fit: contain; }
+        .team-logo-wrap .team-logo-img[hidden],
+        .team-logo-fallback[hidden] { display: none !important; }
+        .team-logo-fallback {
+            display: inline-flex;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #414750;
+            border-radius: 5px;
+            background: #1b222a;
+            color: #d6b56d;
+            font-size: 0.39rem;
+            line-height: 1;
+            letter-spacing: -0.035em;
+            font-weight: 850;
+        }
+        .team-tab .team-logo-wrap { flex-basis: 23px; width: 23px; height: 23px; }
+        .team-card-btn .team-logo-wrap { flex-basis: 21px; width: 21px; height: 21px; }
+        .team-cell .team-logo-wrap { flex-basis: 23px; width: 23px; height: 23px; }
+        .r1-team .team-logo-wrap { flex-basis: 25px; width: 25px; height: 25px; }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo-title" onclick="openLanding()" role="button" tabindex="0" aria-label="Return to simulator overview">WORLDS SWISS ENGINE</div>
+        <button class="btn-nav-action" id="toggle-view-btn">Simulator</button>
+    </nav>
+
+    <!-- LANDING PAGE VIEW -->
+    <div id="landing-view">
+        <div class="hero">
+            <h1>Predict the Worlds 2026 Swiss Stage Outcomes</h1>
+            <p>Make a prediction for every head-to-head matchup and let the Monte Carlo simulation engine compute qualification and elimination odds across up to 1,000,000 tournament iterations.</p>
+            <button class="btn-cta-primary" onclick="openSimulator()">Start Now</button>
+            <div><a class="hero-how-link" href="#how-it-works">How it works <span aria-hidden="true">↓</span></a></div>
+        </div>
+
+        <div class="r1-section">
+            <div class="r1-section-title">Round 1 Opening Draw</div>
+            <div class="r1-section-subtitle">Official initial pairings</div>
+            <div class="r1-grid" id="landing-r1-grid"></div>
+        </div>
+
+        <div class="explanation-stack" id="how-it-works" aria-label="How the simulator works">
+            <div class="explanation-item">
+                <h3><span class="step-number">01</span><span>Set Head-to-Head Predictions</span></h3>
+                <div class="explanation-copy">
+                    <p>Click through each team's tab to configure their 15 theoretical matchups. Select who wins and who loses to build your custom predictive power matrix.</p>
+                </div>
+            </div>
+            <div class="explanation-item">
+                <h3><span class="step-number">02</span><span>Execute Monte Carlo Simulations</span></h3>
+                <div class="explanation-copy">
+                    <p>A full five-round Swiss run contains 33 match outcomes. If each match has two possible winners, that gives up to 2<sup>33</sup> (&gt; 8.5 billion) possible match-outcome sequences, even before accounting for the different legal opponent draws.</p>
+                    <p>The Swiss record-group and no-rematch rules constrain which pairings are allowed, but considering every possible result sequence and draw still creates a large search tree. Brute-force enumeration is impractical client-side in a browser.</p>
+                    <p>Monte Carlo addresses this by repeatedly sampling tournament runs to estimate outcome frequencies. Estimates generally stabilize as the number of runs increases, but they remain estimates rather than exact probabilities.</p>
+                </div>
+            </div>
+            <div class="explanation-item">
+                <h3><span class="step-number">03</span><span>Qualification Probability Estimates</span></h3>
+                <div class="explanation-copy">
+                    <p>Review estimated qualification and elimination odds alongside 3-0, 3-1, and 3-2 score distributions. Estimates stabilize as the number of simulation runs increases.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIMULATOR VIEW -->
+    <div id="simulator-view">
+        <div class="container" id="main-container">
+            <div class="card">
+                <div class="card-header">
+                    Matchup Predictions
+                    <button class="btn-reset" id="reset-btn">Reset Defaults</button>
+                </div>
+
+                <div class="team-tabs-grid" id="team-tabs-grid"></div>
+                <div class="summary-banner" id="summary-banner"></div>
+                <div class="matchup-list" id="matchup-list-container"></div>
+
+                <div class="controls-section">
+                    <div class="slider-group">
+                        <label>
+                            <span>Simulations</span>
+                            <strong id="sim-display">10,000</strong>
+                        </label>
+                        <input type="range" id="sim-slider" min="1000" max="1000000" step="1000" value="10000">
+                    </div>
+                    <button class="btn-run" id="run-sim-btn">Run Simulation</button>
+                </div>
+            </div>
+
+            <div class="card" id="results-card">
+                <div class="card-header">Simulation Results</div>
+                <p class="model-note"><strong>Model assumption:</strong> Each head-to-head pick is treated as a guaranteed winner. Monte Carlo randomizes legal future pairings, so these are qualification estimates conditional on your picks, not match-win odds. Match uncertainty and the difference between Bo1 and Bo3 are not modeled.</p>
+                <div id="results-wrapper">
+                    <div class="status-loading">Ready</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 16 Official Teams Ordered Strictly by Official GPR Standings
+        const teams = [
+            { id: 0, code: "HLE", name: "Hanwha Life Esports", power: 16, logo: "https://static.wikia.nocookie.net/lolesports_gamepedia_en/images/a/a6/Hanwha_Life_Esportslogo_square.png" },
+            { id: 1, code: "GEN", name: "Gen.G", power: 15, logo: "https://static.wikia.nocookie.net/lolesports_gamepedia_en/images/e/e3/Gen.Glogo_square.png" },
+            { id: 2, code: "BLG", name: "Bilibili Gaming", power: 14, logo: "https://static.wikia.nocookie.net/lolesports_gamepedia_en/images/f/fb/Bilibili_Gaminglogo_profile.png" },
+            { id: 3, code: "G2", name: "G2 Esports", power: 13, logo: "https://static.wikia.nocookie.net/lolesports_gamepedia_en/images/7/77/G2_Esportslogo_square.png" },
+            { id: 4, code: "T1", name: "T1", power: 12, logo: "https://static.wikia.nocookie.net/lolesports_gamepedia_en/images/a/a2/T1logo_square.png" },
+            { id: 5, code: "LYON", name: "LYON", power: 11, logo: "https://static.wikia.nocookie.net/lolesports_gamepedia_en/images/5/54/LYON_%282024_American_Team%29logo_square.png" },
+            { id: 6, code: "KC", name: "Karmine Corp", power: 10, logo: "https://static.wikia.nocookie.net/lolesports_gamepedia_en/images/2/2d/Karmine_Corplogo_square.png" },
+            { id: 7, code: "DK", name: "Dplus KIA", power: 9, logo: "https://static.wikia.nocookie.net/lolesports_gamepedia_en/images/1/1b/Dplus_Kialogo_square.png" },
+            { id: 8, code: "AL", name: "Anyone's Legend", power: 8, logo: "https://static.wikia.nocookie.net/lolesports_gamepedia_en/images/2/25/Anyone%27s_Legendlogo_square.png" },
+            { id: 9, code: "TL", name: "Team Liquid", power: 7, logo: "https://static.wikia.nocookie.net/lolesports_gamepedia_en/images/f/f4/Team_Liquidlogo_square.png" },
+            { id: 10, code: "TSW", name: "Team Secret Whales", power: 6, logo: "https://static.wikia.nocookie.net/lolesports_gamepedia_en/images/a/ac/Team_Secret_Whaleslogo_square.png" },
+            { id: 11, code: "TES", name: "Top Esports", power: 5, logo: "https://static.wikia.nocookie.net/lolesports_gamepedia_en/images/4/46/Top_Esportslogo_square.png" },
+            { id: 12, code: "IG", name: "Invictus Gaming", power: 4, logo: "https://static.wikia.nocookie.net/lolesports_gamepedia_en/images/e/e4/Invictus_Gaminglogo_square.png" },
+            { id: 13, code: "MKOI", name: "Movistar KOI", power: 3, logo: "https://static.lolesports.com/teams/1734012609283_MKOI_FullColor_Blue.png" },
+            { id: 14, code: "CFO", name: "CTBC Flying Oyster", power: 2, logo: "https://static.wikia.nocookie.net/lolesports_gamepedia_en/images/b/bb/CTBC_Flying_Oysterlogo_square.png" },
+            { id: 15, code: "LOS", name: "LOS", power: 1, logo: "https://static.lolesports.com/teams/1784013312149_LOS-OLaranja.png" }
+        ];
+
+        const round1Matchups = [
+            [1, 12],  // GEN vs IG
+            [9, 14],  // TL vs CFO
+            [8, 6],   // AL vs KC
+            [3, 7],   // G2 vs DK
+            [0, 11],  // HLE vs TES
+            [15, 4],  // LOS vs T1
+            [10, 5],  // TSW vs LYON
+            [2, 13]   // BLG vs MKOI
+        ];
+
+        let matrix = [];
+        let activeTeamId = 0;
+
+        function openSimulator() {
+            document.getElementById('landing-view').style.display = 'none';
+            document.getElementById('simulator-view').style.display = 'flex';
+            document.getElementById('toggle-view-btn').textContent = "Info Page";
+        }
+
+        function openLanding() {
+            document.getElementById('simulator-view').style.display = 'none';
+            document.getElementById('landing-view').style.display = 'flex';
+            document.getElementById('toggle-view-btn').textContent = "Simulator";
+        }
+
+        document.querySelector('.logo-title').addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openLanding();
+            }
+        });
+
+        document.getElementById('toggle-view-btn').addEventListener('click', () => {
+            const isSimVisible = document.getElementById('simulator-view').style.display === 'flex';
+            if (isSimVisible) openLanding();
+            else openSimulator();
+        });
+
+        function renderLandingR1Grid() {
+            const container = document.getElementById('landing-r1-grid');
+            let html = '';
+            round1Matchups.forEach(([t1Idx, t2Idx]) => {
+                const teamA = teams[t1Idx];
+                const teamB = teams[t2Idx];
+                html += `
+                    <div class="r1-match-card">
+                        <div class="r1-team">
+                            ${createTeamIconHtml(teamA)}
+                            <span class="r1-team-code">${teamA.code}</span>
+                        </div>
+                        <span class="r1-vs">VS</span>
+                        <div class="r1-team">
+                            ${createTeamIconHtml(teamB)}
+                            <span class="r1-team-code">${teamB.code}</span>
+                        </div>
+                    </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function initBaselineMatrix() {
+            matrix = Array(16).fill(false).map(() => Array(16).fill(false));
+            for (let i = 0; i < 16; i++) {
+                for (let j = 0; j < 16; j++) {
+                    if (i === j) continue;
+                    matrix[i][j] = teams[i].power > teams[j].power || (teams[i].power === teams[j].power && i < j);
+                }
+            }
+        }
+
+        function createTeamIconHtml(team) {
+            return `<span class="team-logo-wrap"><img class="team-logo-img" src="${team.logo}" alt="${team.code}" onerror="this.onerror=null;this.hidden=true;this.nextElementSibling.hidden=false" /><span class="team-logo-fallback" hidden>${team.code}</span></span>`;
+        }
+
+        function renderTeamTabs() {
+            const container = document.getElementById('team-tabs-grid');
+            let html = '';
+            teams.forEach(t => {
+                const activeCls = t.id === activeTeamId ? 'active' : '';
+                html += `
+                    <div class="team-tab ${activeCls}" onclick="setActiveTeam(${t.id})">
+                        ${createTeamIconHtml(t)}
+                        <span>${t.code}</span>
+                    </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        window.setActiveTeam = function(teamId) {
+            activeTeamId = teamId;
+            renderTeamTabs();
+            renderMatchupList();
+        };
+
+        function renderMatchupList() {
+            const container = document.getElementById('matchup-list-container');
+            const banner = document.getElementById('summary-banner');
+            const activeTeam = teams.find(t => t.id === activeTeamId);
+            
+            let winCount = 0;
+            let lossCount = 0;
+            let html = '';
+
+            teams.forEach(otherTeam => {
+                if (otherTeam.id === activeTeamId) return;
+
+                const activeWins = matrix[activeTeamId][otherTeam.id];
+                if (activeWins) winCount++; else lossCount++;
+
+                html += `
+                    <div class="matchup-row">
+                        <button class="team-card-btn ${activeWins ? 'win' : ''}" onclick="setWinner(${activeTeamId}, ${otherTeam.id})">
+                            ${createTeamIconHtml(activeTeam)}
+                            ${activeTeam.code}
+                        </button>
+                        <span class="vs-badge">VS</span>
+                        <button class="team-card-btn ${!activeWins ? 'loss' : ''}" onclick="setWinner(${otherTeam.id}, ${activeTeamId})">
+                            ${createTeamIconHtml(otherTeam)}
+                            ${otherTeam.code}
+                        </button>
+                    </div>`;
+            });
+
+            banner.innerHTML = `<span>Head-to-Head record for <strong>${activeTeam.code}</strong>:</span> <strong>${winCount}W - ${lossCount}L</strong>`;
+            container.innerHTML = html;
+        }
+
+        window.setWinner = function(winnerIdx, loserIdx) {
+            matrix[winnerIdx][loserIdx] = true;
+            matrix[loserIdx][winnerIdx] = false;
+            renderMatchupList();
+        };
+
+        const slider = document.getElementById('sim-slider');
+        const simDisplay = document.getElementById('sim-display');
+        slider.addEventListener('input', (e) => {
+            simDisplay.textContent = Number(e.target.value).toLocaleString();
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            initBaselineMatrix();
+            renderMatchupList();
+        });
+
+        // Swiss Simulation Engine
+        // The selected head-to-head winner is treated as deterministic. Randomness
+        // comes from legal opponent draws, so reported percentages are conditional
+        // qualification estimates rather than match-win probabilities.
+        function runSimulation() {
+            const iterations = Number.parseInt(slider.value, 10);
+            if (!Number.isInteger(iterations) || iterations < 1) {
+                throw new Error('Choose a valid number of simulation runs.');
+            }
+
+            const stats = teams.map(t => ({
+                id: t.id,
+                code: t.code,
+                name: t.name,
+                logo: t.logo,
+                qualified: 0,
+                eliminated: 0,
+                scores: { '3-0': 0, '3-1': 0, '3-2': 0, '2-3': 0, '1-3': 0, '0-3': 0 }
+            }));
+
+            function getWinner(t1, t2) {
+                return matrix[t1][t2] ? t1 : t2;
+            }
+
+            function shuffledCopy(items) {
+                const result = [...items];
+                // Fisher–Yates gives an unbiased shuffle (unlike sort(Math.random)).
+                for (let i = result.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [result[i], result[j]] = [result[j], result[i]];
+                }
+                return result;
+            }
+
+            function hasLegalPairing(pool, history) {
+                if (pool.length === 0) return true;
+                if (pool.length % 2 !== 0) return false;
+
+                // Pair the most constrained team first to find whether a complete
+                // same-record, no-rematch draw exists.
+                let chosen = pool[0];
+                let chosenOptions = pool.slice(1).filter(id => !history[chosen].has(id));
+                for (let i = 1; i < pool.length; i++) {
+                    const candidate = pool[i];
+                    const options = pool.filter((id, index) => index !== i && !history[candidate].has(id));
+                    if (options.length < chosenOptions.length) {
+                        chosen = candidate;
+                        chosenOptions = options;
+                    }
+                }
+                if (chosenOptions.length === 0) return false;
+
+                const remaining = pool.filter(id => id !== chosen);
+                for (const opponent of shuffledCopy(chosenOptions)) {
+                    const next = remaining.filter(id => id !== opponent);
+                    if (hasLegalPairing(next, history)) return true;
+                }
+                return false;
+            }
+
+            function minimumRematchPairing(pool, history) {
+                let bestRematches = Infinity;
+                let bestPairings = [];
+
+                function search(remaining, pairs, rematches) {
+                    if (rematches > bestRematches) return;
+                    if (remaining.length === 0) {
+                        if (rematches < bestRematches) {
+                            bestRematches = rematches;
+                            bestPairings = [pairs];
+                        } else if (rematches === bestRematches) {
+                            bestPairings.push(pairs);
+                        }
+                        return;
+                    }
+
+                    const first = remaining[0];
+                    const rest = remaining.slice(1);
+                    for (const opponent of shuffledCopy(rest)) {
+                        const next = rest.filter(id => id !== opponent);
+                        search(
+                            next,
+                            [...pairs, [first, opponent]],
+                            rematches + (history[first].has(opponent) ? 1 : 0)
+                        );
+                    }
+                }
+
+                search(shuffledCopy(pool), [], 0);
+                if (!bestPairings.length) {
+                    throw new Error('Could not construct a complete Swiss pairing.');
+                }
+                // Only used when every complete same-record pairing would include
+                // a rematch; choose among pairings with the fewest repeats.
+                return bestPairings[Math.floor(Math.random() * bestPairings.length)];
+            }
+
+            function pairPool(pool, history) {
+                if (pool.length % 2 !== 0) {
+                    throw new Error(`Swiss record group has an unexpected odd number of teams (${pool.length}).`);
+                }
+                if (pool.length === 0) return [];
+
+                if (!hasLegalPairing(pool, history)) {
+                    // Riot's rules allow the no-rematch restriction to be waived
+                    // if no eligible draw exists. Keep teams in their record pool
+                    // and minimize the number of repeated opponents in that case.
+                    return minimumRematchPairing(pool, history);
+                }
+
+                // A random permutation paired adjacently samples perfect matchings
+                // uniformly. Reject complete draws containing a rematch, so the
+                // accepted draw is uniform among legal same-record pairings.
+                while (true) {
+                    const shuffled = shuffledCopy(pool);
+                    const pairs = [];
+                    let legal = true;
+                    for (let i = 0; i < shuffled.length; i += 2) {
+                        if (history[shuffled[i]].has(shuffled[i + 1])) {
+                            legal = false;
+                            break;
+                        }
+                        pairs.push([shuffled[i], shuffled[i + 1]]);
+                    }
+                    if (legal) return pairs;
+                }
+            }
+
+            function recordMatch(t1, t2, records, history, teamStatus) {
+                history[t1].add(t2);
+                history[t2].add(t1);
+
+                const winner = getWinner(t1, t2);
+                const loser = winner === t1 ? t2 : t1;
+                records[winner].wins++;
+                records[loser].losses++;
+
+                if (records[winner].wins === 3) teamStatus[winner] = 'qualified';
+                if (records[loser].losses === 3) teamStatus[loser] = 'eliminated';
+            }
+
+            for (let iter = 0; iter < iterations; iter++) {
+                const records = teams.map(t => ({ id: t.id, wins: 0, losses: 0 }));
+                const history = teams.map(() => new Set());
+                const teamStatus = Array(teams.length).fill(null);
+
+                // Round 1 uses the configured opening draw.
+                for (const [t1, t2] of round1Matchups) {
+                    recordMatch(t1, t2, records, history, teamStatus);
+                }
+
+                // Later rounds pair only teams with identical match records.
+                // No team is carried into another record group just because a
+                // greedy pairing attempt got stuck.
+                for (let round = 2; round <= 5; round++) {
+                    const pools = new Map();
+                    for (const team of teams) {
+                        if (teamStatus[team.id] !== null) continue;
+                        const record = records[team.id];
+                        const key = `${record.wins}-${record.losses}`;
+                        if (!pools.has(key)) pools.set(key, []);
+                        pools.get(key).push(team.id);
+                    }
+
+                    for (const pool of pools.values()) {
+                        const pairs = pairPool(pool, history);
+                        for (const [t1, t2] of pairs) {
+                            recordMatch(t1, t2, records, history, teamStatus);
+                        }
+                    }
+                }
+
+                teams.forEach(team => {
+                    const record = records[team.id];
+                    const status = teamStatus[team.id];
+                    if (status !== 'qualified' && status !== 'eliminated') {
+                        throw new Error(`Simulation ended with ${team.code} still at ${record.wins}-${record.losses}.`);
+                    }
+                    const scoreKey = `${record.wins}-${record.losses}`;
+                    if (stats[team.id].scores[scoreKey] === undefined) {
+                        throw new Error(`Unexpected terminal record ${scoreKey} for ${team.code}.`);
+                    }
+                    stats[team.id].scores[scoreKey]++;
+                    if (status === 'qualified') stats[team.id].qualified++;
+                    else stats[team.id].eliminated++;
+                });
+            }
+
+            renderResults(stats, iterations);
+        }
+
+        function renderResults(stats, iterations) {
+            const totalQualified = stats.reduce((sum, team) => sum + team.qualified, 0);
+            const totalEliminated = stats.reduce((sum, team) => sum + team.eliminated, 0);
+            if (totalQualified !== iterations * 8 || totalEliminated !== iterations * 8) {
+                throw new Error('Simulation integrity check failed: each run should produce 8 qualifiers and 8 eliminations.');
+            }
+            stats.forEach(team => {
+                const qualifiedByScore = team.scores['3-0'] + team.scores['3-1'] + team.scores['3-2'];
+                const eliminatedByScore = team.scores['0-3'] + team.scores['1-3'] + team.scores['2-3'];
+                const allTerminalScores = qualifiedByScore + eliminatedByScore;
+                if (qualifiedByScore !== team.qualified) {
+                    throw new Error(`Simulation integrity check failed for ${team.code}: qualifying score counts do not match qualification counts.`);
+                }
+                if (eliminatedByScore !== team.eliminated || allTerminalScores !== iterations) {
+                    throw new Error(`Simulation integrity check failed for ${team.code}: terminal score counts do not match completed runs.`);
+                }
+            });
+            // Rank by qualification rate first, then by qualifying score distribution.
+            // Since all teams share the same iteration count, comparing counts is equivalent to comparing percentages.
+            stats.sort((a, b) =>
+                (b.qualified - a.qualified) ||
+                (b.scores["3-0"] - a.scores["3-0"]) ||
+                (b.scores["3-1"] - a.scores["3-1"]) ||
+                (b.scores["3-2"] - a.scores["3-2"])
+            );
+
+            const wrapper = document.getElementById('results-wrapper');
+            let html = `<div class="results-wrapper"><table>
+                <thead>
+                    <tr>
+                        <th>Team</th>
+                        <th>Qualify / Eliminate</th>
+                        <th>3-0</th>
+                        <th>3-1</th>
+                        <th>3-2</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            stats.forEach(st => {
+                const qualPct = ((st.qualified / iterations) * 100).toFixed(1);
+                const elimPct = ((st.eliminated / iterations) * 100).toFixed(1);
+                const p30 = ((st.scores["3-0"] / iterations) * 100).toFixed(1);
+                const p31 = ((st.scores["3-1"] / iterations) * 100).toFixed(1);
+                const p32 = ((st.scores["3-2"] / iterations) * 100).toFixed(1);
+
+                html += `<tr>
+                    <td class="team-cell">
+                        ${createTeamIconHtml(st)}
+                        <span>${st.code}</span>
+                    </td>
+                    <td>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${qualPct}%"></div></div>
+                        <strong>${qualPct}%</strong> <span style="color:var(--text-muted); font-size:0.78rem;">(${elimPct}%)</span>
+                    </td>
+                    <td>${p30}%</td>
+                    <td>${p31}%</td>
+                    <td>${p32}%</td>
+                </tr>`;
+            });
+
+            html += `</tbody></table></div>`;
+            wrapper.innerHTML = html;
+        }
+
+        // Initialize App
+        initBaselineMatrix();
+        renderLandingR1Grid();
+        renderTeamTabs();
+        renderMatchupList();
+
+        document.getElementById('run-sim-btn').addEventListener('click', () => {
+            document.getElementById('results-card').style.display = 'block';
+            document.getElementById('main-container').classList.add('has-results');
+            
+            const wrapper = document.getElementById('results-wrapper');
+            wrapper.innerHTML = `<div class="status-loading">Executing ${Number(slider.value).toLocaleString()} Monte Carlo simulations...</div>`;
+            
+            setTimeout(() => {
+                try {
+                    runSimulation();
+                } catch (error) {
+                    console.error(error);
+                    wrapper.innerHTML = `<div class="status-loading" role="alert">Simulation could not complete. Please try again; details are available in the browser console.</div>`;
+                }
+            }, 25);
+        });
+    </script>
+</body>
+</html>
