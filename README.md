@@ -2,6 +2,4 @@ Make a prediction for every head-to-head matchup and let the Monte Carlo simulat
 
 https://chien-hsueh.github.io/Worldsmax/
 
-<a href="https://youtu.be/FooHvXTxGio?si=QtD8REiTBIXi56iB">
-   <img src="https://youtu.be/FooHvXTxGio" alt="Demo video" width="600" />
-</a>
+https://youtu.be/FooHvXTxGio
